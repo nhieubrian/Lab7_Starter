@@ -1,6 +1,6 @@
 // main.js
 
-import { Router } from './router.js';
+import { Router } from './Router.js';
 
 const recipes = [
   'https://introweb.tech/assets/json/ghostCookies.json',
@@ -25,6 +25,9 @@ const router = new Router(function () {
    * This will only be two single lines
    * If you did this right, you should see the recipe cards just like last lab
    */
+  document.querySelector('section.section--recipe-cards').classList.add('shown');
+  document.querySelector('section.section--recipe-expand').classList.remove('shown');
+
 });
 
 window.addEventListener('DOMContentLoaded', init);
@@ -55,6 +58,18 @@ function initializeServiceWorker() {
    *  TODO - Part 2 Step 1
    *  Initialize the service worker set up in sw.js
    */
+   if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/sw.js').then(function(registration) {
+        // Registration was successful
+        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      }, function(err) {
+        // registration failed :(
+        console.log('ServiceWorker registration failed: ', err);
+      });
+    });
+  }
+
 }
 
 /**
@@ -117,6 +132,23 @@ function createRecipeCards() {
    * all the recipes. (bonus - add the class 'hidden' to every recipe card with 
    * an index greater  than 2 in your for loop to make show more button functional)
    */
+
+  for(let i = 1; i < recipes.length; i++){
+    const recipeCard = document.createElement('recipe-card');
+    recipeCard.data = recipeData[recipes[i]];
+    if(i > 2){
+      recipeCard.classList.add('hidden');
+    }
+    const page = recipeData[recipes[i]]['page-name'];
+    router.addPage(page, function() {
+      document.querySelector('.section--recipe-cards').classList.remove('shown');
+      document.querySelector('.section--recipe-expand').classList.add('shown');
+      document.querySelector('recipe-expand').data = recipeData[recipes[i]];
+    });
+    bindRecipeCard(recipeCard, page);
+    
+    document.querySelector('.recipe-cards--wrapper').appendChild(recipeCard);
+  }
 }
 
 /**
@@ -172,6 +204,13 @@ function bindEscKey() {
    * if the escape key is pressed, use your router to navigate() to the 'home'
    * page. This will let us go back to the home page from the detailed page.
    */
+
+  document.addEventListener('keydown', (event) => {
+    if(event.key == 'Escape'){
+      router.navigate('home');
+    }
+  })
+
 }
 
 /**
@@ -193,4 +232,12 @@ function bindPopstate() {
    * so your navigate() function does not add your going back action to the history,
    * creating an infinite loop
    */
+  window.addEventListener('popstate', (event) => {
+    if(event.state != undefined){
+      router.navigate(event.state.page, true);
+    }
+    else{
+      router.navigate('home', true);
+    }
+  })
 }
